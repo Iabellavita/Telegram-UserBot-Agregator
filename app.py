@@ -3,7 +3,7 @@ from telethon.errors import SessionPasswordNeededError
 from config import API_ID, API_HASH
 import os
 
-OUTPUT_CHANNEL = 'https://t.me/checker_forwarder_helper'
+OUTPUT_CHANNEL = 'https://t.me/channel'
 
 
 def parse_file(filename: str):
