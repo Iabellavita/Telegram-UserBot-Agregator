@@ -43,8 +43,10 @@ def main():
             if word.lower() in str(event.message).lower():
                 try:
                     await client.forward_messages(OUTPUT_CHANNEL, event.message)
+                    break
                 except Exception as ex:
                     await client.send_message(OUTPUT_CHANNEL, str(ex))
+                    break
 
     client.run_until_disconnected()
 
