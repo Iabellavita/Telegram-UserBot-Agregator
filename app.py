@@ -4,7 +4,7 @@ from config import API_ID, API_HASH
 import re
 import os
 
-OUTPUT_CHANNEL = 'https://t.me/checker_forwarder_helper'
+OUTPUT_CHANNEL = 'https://t.me/some_chat'
 
 ERROR = "The specified message ID is invalid or you can't do that operation on such message (caused by ForwardMessagesRequest)"
 
