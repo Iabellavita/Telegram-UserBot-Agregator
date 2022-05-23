@@ -1,17 +1,22 @@
 from telethon import TelegramClient, sync, events
 from telethon.errors import SessionPasswordNeededError
 from config import API_ID, API_HASH
+import re
 import os
 
-OUTPUT_CHANNEL = 'https://t.me/channel'
+OUTPUT_CHANNEL = 'https://t.me/checker_forwarder_helper'
+
+ERROR = "The specified message ID is invalid or you can't do that operation on such message (caused by ForwardMessagesRequest)"
+
+LAST_MSG = None
 
 
 def parse_file(filename: str):
-    data = []
+    data = set()
     with open(filename, encoding='utf-8') as f:
         text = f.read().split('\n')
     for word in text:
-        data.append(word.strip())
+        data.add(word.strip())
     return data
 
 
@@ -38,15 +43,18 @@ def main():
 
     @client.on(events.NewMessage(chats=INPUT_CHANNELS))
     async def normal_handler(event):
+        global LAST_MSG
         keywords = parse_file('keywords.txt')
         for word in keywords:
-            if word.lower() in str(event.message).lower():
+            if re.search(rf'\b{word.lower()}\b', str(event.message).lower()):
                 try:
-                    await client.forward_messages(OUTPUT_CHANNEL, event.message)
-                    break
+                    if LAST_MSG != str(event.message):
+                        await client.forward_messages(OUTPUT_CHANNEL, event.message)
+                        LAST_MSG = str(event.message)
+                        break
                 except Exception as ex:
-                    await client.send_message(OUTPUT_CHANNEL, str(ex))
-                    break
+                    if ERROR not in str(ex):
+                        await client.send_message(OUTPUT_CHANNEL, str(ex))
 
     client.run_until_disconnected()
 
