@@ -1,14 +1,19 @@
-from telethon import TelegramClient, sync, events
-from telethon.errors import SessionPasswordNeededError
-from config import API_ID, API_HASH
 import re
-import os
 
-OUTPUT_CHANNEL = 'https://t.me/some_chat'
+from telethon import TelegramClient, events
+
+from config import API_ID, API_HASH
+
+OUTPUT_CHANNEL = 'https://t.me/channel' # channel_name or ID
 
 ERROR = "The specified message ID is invalid or you can't do that operation on such message (caused by ForwardMessagesRequest)"
 
-LAST_MSG = None
+
+def skipper(data: set, message: str):
+    for word in data:
+        if word in message:
+            return False
+    return True
 
 
 def parse_file(filename: str):
@@ -16,45 +21,42 @@ def parse_file(filename: str):
     with open(filename, encoding='utf-8') as f:
         text = f.read().split('\n')
     for word in text:
-        data.add(word.strip())
+        data.add(word.strip().lower())
     return data
 
 
-INPUT_CHANNELS = parse_file('channels.txt')
+def parse_channels(filename: str):
+    data = set()
+    with open(filename, encoding='utf-8') as f:
+        text = f.read().split('\n')
+    for word in text:
+        try:
+            data.add(int(word.strip()))
+        except ValueError:
+            data.add(word.strip())
+    return data
 
 
 def main():
+    INPUT_CHANNELS = parse_channels('channels.txt')
+    KEYWORDS = parse_file('keywords.txt')
+    FALSE_POS = parse_file('false_pos.txt')
+
     client = TelegramClient('current-session', API_ID, API_HASH)
-    if os.path.exists('current-session.session'):
-        client.start()
-    else:
-        client = TelegramClient('current-session', API_ID, API_HASH)
-        client.connect()
-
-        phone = input("Enter phone: ")
-        client.send_code_request(phone, force_sms=False)
-        value = input("Enter login code: ")
-
-        try:
-            me = client.sign_in(phone, code=value)
-        except SessionPasswordNeededError:
-            password = input("Enter password: ")
-            me = client.sign_in(password=password)
+    client.start()
 
     @client.on(events.NewMessage(chats=INPUT_CHANNELS))
     async def normal_handler(event):
-        global LAST_MSG
-        keywords = parse_file('keywords.txt')
-        for word in keywords:
-            if re.search(rf'\b{word.lower()}\b', str(event.message).lower()):
-                try:
-                    if LAST_MSG != str(event.message):
+        if skipper(FALSE_POS, str(event.message.message).lower()):
+            for word in KEYWORDS:
+                if re.search(rf'\b{str(word)}\b', str(event.message.message).lower()):
+                    try:
                         await client.forward_messages(OUTPUT_CHANNEL, event.message)
-                        LAST_MSG = str(event.message)
                         break
-                except Exception as ex:
-                    if ERROR not in str(ex):
-                        await client.send_message(OUTPUT_CHANNEL, str(ex))
+
+                    except Exception as ex:
+                        if ERROR not in str(ex):
+                            await client.send_message(OUTPUT_CHANNEL, str(ex))
 
     client.run_until_disconnected()
 
