@@ -4,7 +4,7 @@ from telethon import TelegramClient, events
 
 from config import API_ID, API_HASH
 
-OUTPUT_CHANNEL = 'https://t.me/channel' # channel_name or ID
+OUTPUT_CHANNEL = -11000000000 #your channel ID
 
 ERROR = "The specified message ID is invalid or you can't do that operation on such message (caused by ForwardMessagesRequest)"
 
@@ -51,12 +51,12 @@ def main():
             for word in KEYWORDS:
                 if re.search(rf'\b{str(word)}\b', str(event.message.message).lower()):
                     try:
-                        await client.forward_messages(OUTPUT_CHANNEL, event.message)
+                        await client.forward_messages(await client.get_entity(OUTPUT_CHANNEL), event.message)
                         break
 
                     except Exception as ex:
                         if ERROR not in str(ex):
-                            await client.send_message(OUTPUT_CHANNEL, str(ex))
+                            await client.send_message(await client.get_entity(OUTPUT_CHANNEL), str(ex))
 
     client.run_until_disconnected()
 
