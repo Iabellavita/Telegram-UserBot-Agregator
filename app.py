@@ -4,24 +4,22 @@ from telethon import TelegramClient, events
 
 from config import API_ID, API_HASH
 
-OUTPUT_CHANNEL = -11000000000 #your channel ID
+OUTPUT_CHANNEL = -100000000000
 
 ERROR = "The specified message ID is invalid or you can't do that operation on such message (caused by ForwardMessagesRequest)"
 
 
 def skipper(data: set, message: str):
     for word in data:
-        if word in message:
+        if word in message.lower():
             return False
     return True
 
 
 def parse_file(filename: str):
-    data = set()
     with open(filename, encoding='utf-8') as f:
         text = f.read().split('\n')
-    for word in text:
-        data.add(word.strip().lower())
+    data = set(word.strip().lower() for word in text)
     return data
 
 
@@ -47,7 +45,7 @@ def main():
 
     @client.on(events.NewMessage(chats=INPUT_CHANNELS))
     async def normal_handler(event):
-        if skipper(FALSE_POS, str(event.message.message).lower()):
+        if skipper(FALSE_POS, str(event.message.message)):
             for word in KEYWORDS:
                 if re.search(rf'\b{str(word)}\b', str(event.message.message).lower()):
                     try:
